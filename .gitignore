@@ -1,0 +1,8 @@
+#link file
+*.o
+
+#static lib
+*.a
+
+#exceutable file
+p2
