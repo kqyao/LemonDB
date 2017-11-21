@@ -45,6 +45,10 @@ int main()
             Query::Ptr query = p.parseQuery(queryStr);
             string commandName = query->commandName();
             if (commandName == "QUIT") {
+                for (auto it=mutex_vector.begin(); it!=mutex_vector.end(); ++it)
+                {
+                    delete (*it); 
+                }
                 exit(0); 
             }
             query->executeAndPrint(); 
