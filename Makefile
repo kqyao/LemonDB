@@ -16,7 +16,7 @@ LIBINC = ./lib/includes/
 
 # Optimization and Compiler flags and commands
 CC = g++
-CFLAGS = -Werror -O3 -std=c++14
+CFLAGS = -g -Werror -O3 -std=c++14
 
 # Debugging flags
 DEBUG = -g
