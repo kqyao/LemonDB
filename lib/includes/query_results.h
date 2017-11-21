@@ -60,7 +60,7 @@ class ErrorMsgResult : public FailedQueryResult
 
     std::string toString() override
     {
-        return msg;
+        return msg + "\n";
     }
 };
 
@@ -88,7 +88,8 @@ class SuccessMsgResult : public SuceededQueryResult
 
     std::string toString() override
     {
-        return msg;
+        //return msg + "\n";
+        return "";
     }
 };
 
@@ -101,7 +102,7 @@ class RecordCountResult : public SuceededQueryResult
 
     std::string toString() override
     {
-        return "Affected ? rows."_f % affectedRows;
+        return "Affected ? rows.\n"_f % affectedRows;
     }
 };
 

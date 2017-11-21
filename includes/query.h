@@ -3,9 +3,32 @@
 
 #include <string>
 #include <memory>
+#include <thread>
+#include <iostream>
 #include "uexception.h"
 #include "db_table.h"
 #include "query_results.h"
+
+using namespace std; 
+
+/************** things added*************/
+
+typedef enum lastStatus_t {
+    STATUS_WRITE = 0x00, 
+    STATUS_READ = 0x01
+} lastStatus; 
+
+static unordered_map<string, vector<vector<thread*>>> table_thread_group; 
+// map string(tablename) to thread groups; 
+// vector<thread*> is a group of reading threads or writing threads; 
+//                 we push `reading` threads into one vector
+//                 `writing` threads into different vectors
+// vector<vector<thread*>> is the whole list of these groups; 
+
+static unordered_map<string, lastStatus> table_last_status; 
+// save the last status of each table. 
+
+////////////////////////////////////////////////////
 
 class Query {
 public:
@@ -13,6 +36,40 @@ public:
     virtual QueryResult::Ptr execute() = 0;
     virtual std::string      toString() = 0;
     virtual ~Query() = default;
+
+    /******added ***************/
+    //********************** DANGEROUS PUBLIC ATTRIBUTES!!! We are being LAZY here!!! ************
+    vector<thread*>* waitThreadsPtr = nullptr; // wait the threads in the vector before execute
+    vector<thread*>* waitThreadsSecondPtr = nullptr; // only for COPYTABLE
+    virtual string commandName() = 0; // return things like "LOAD" or "SELECT", etc. 
+    virtual string getTableName() = 0;  // return the table needed or affected. 
+    virtual string getTableNameSecond() = 0; // only for COPYTABLE
+    void executeAndPrint() 
+    {
+        if (waitThreadsPtr) {
+            for (auto it=waitThreadsPtr->begin(); it!=waitThreadsPtr->end(); ++it) 
+            {
+                (*it)->join(); 
+            }
+        }
+        if (waitThreadsSecondPtr) {
+            for (auto it=waitThreadsSecondPtr->begin(); it!=waitThreadsSecondPtr->end(); ++it) 
+            {
+                (*it)->join(); 
+            }
+        }
+        QueryResult::Ptr result = execute();
+        if (result->success())
+        {
+            cout << result->toString();
+        }
+        else
+        {
+            std::flush(cout);
+            cerr << "QUERY FAILED:\n\t" << result->toString();
+        }
+    }
+    //////////////////////////////////////////////
 };
 
 struct QueryCondition {
@@ -29,6 +86,16 @@ public:
 
     std::string toString() override {
         return "QUERY = NOOP";
+    }
+    string commandName() override {
+        return "NOOP"; 
+    }
+
+    string getTableName() override {
+        return ""; 
+    }
+    string getTableNameSecond() override {
+        return ""; 
     }
 };
 

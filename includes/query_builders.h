@@ -103,8 +103,11 @@ BasicQueryBuilderClass(Debug);
 // Load, dump, truncate and delete table
 BasicQueryBuilderClass(ManageTable);
 
-ComplexQueryBuilderClass(UpdateTable);
-ComplexQueryBuilderClass(Insert);
-ComplexQueryBuilderClass(Delete);
+ComplexQueryBuilderClass(ManageData);
+
+//ComplexQueryBuilderClass(UpdateTable);
+//ComplexQueryBuilderClass(Insert);
+//ComplexQueryBuilderClass(Delete);
+//ComplexQueryBuilderClass(Select);
 
 #endif //SRC_QUERY_BUILDERS_H
