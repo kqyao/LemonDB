@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include <iostream>
+#include <mutex>
 #include "uexception.h"
 #include "db_table.h"
 #include "query_results.h"
@@ -28,6 +29,12 @@ static unordered_map<string, vector<vector<thread*>>> table_thread_group;
 static unordered_map<string, lastStatus> table_last_status; 
 // save the last status of each table. 
 
+static unordered_map<thread*, mutex*> thread_join_lock; 
+// the hash table of lock when test joinable. 
+
+static std::vector<mutex*> mutex_vector;
+// contain all mutexes need to be delete (free). 
+
 ////////////////////////////////////////////////////
 
 class Query {
@@ -49,13 +56,21 @@ public:
         if (waitThreadsPtr) {
             for (auto it=waitThreadsPtr->begin(); it!=waitThreadsPtr->end(); ++it) 
             {
-                (*it)->join(); 
+                mutex* lockPtr = thread_join_lock[*it];
+                lockPtr->lock(); 
+                if ((*it)->joinable())
+                    (*it)->join(); 
+                lockPtr->unlock(); 
             }
         }
         if (waitThreadsSecondPtr) {
             for (auto it=waitThreadsSecondPtr->begin(); it!=waitThreadsSecondPtr->end(); ++it) 
             {
-                (*it)->join(); 
+                mutex* lockPtr = thread_join_lock[*it];
+                lockPtr->lock(); 
+                if ((*it)->joinable())
+                    (*it)->join(); 
+                lockPtr->unlock(); 
             }
         }
         QueryResult::Ptr result = execute();
