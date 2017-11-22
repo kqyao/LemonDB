@@ -115,7 +115,7 @@ public:
     std::string toString() override;
     string commandName() override; 
     string getTableName() override;
-    string getTableNameSecond() override; 
+    string getTableNameSecond() override;
 };
 
 class AddQuery : public ComplexQuery

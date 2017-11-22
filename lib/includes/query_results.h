@@ -88,8 +88,8 @@ class SuccessMsgResult : public SuceededQueryResult
 
     std::string toString() override
     {
-        //return msg + "\n";
-        return "";
+        return msg + "\n";
+        //return "";
     }
 };
 

@@ -58,9 +58,7 @@ Query::Ptr DebugQueryBuilder::tryExtractQuery(TokenizedQueryString &query)
         if (query.token.front() == "LIST")
             return std::make_unique<ListTableQuery>(    );
         if (query.token.front() == "QUIT")
-            // We are being lazy here ...
-            // Might cause problem ...
-            exit(0);
+            return std::make_unique<QuitQuery>(); 
     }
     if (query.token.size() == 2)
     {
@@ -188,7 +186,7 @@ Query::Ptr ManageDataQueryBuilder::tryExtractQuery(TokenizedQueryString &query)
     if (query.token.front() == "DELETE")
         return std::make_unique<DeleteQuery>(
             this->targetTable, this->operandToken, this->conditionToken);
-    if (query.token.front() == "SELECT")
+    if (query.token.front() == "SELECT") 
         return std::make_unique<SelectQuery>(
             this->targetTable, this->operandToken, this->conditionToken);
     if (query.token.front() == "DUPLICATE")

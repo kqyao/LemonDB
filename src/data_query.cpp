@@ -2,6 +2,7 @@
 #include "data_query.h"
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 constexpr const char *InsertQuery::qname;
 constexpr const char *UpdateQuery::qname;
 constexpr const char *DeleteQuery::qname;
@@ -42,6 +43,8 @@ QueryResult::Ptr SubQuery::execute()
                 counter++;
             }
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter;
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -122,6 +125,8 @@ QueryResult::Ptr AddQuery::execute()
                 counter++;
             }
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter;
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -165,7 +170,7 @@ string AddQuery::commandName()
 
 string AddQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string AddQuery::getTableNameSecond()
@@ -201,12 +206,15 @@ QueryResult::Ptr SumQuery::execute()
                 for (int i = 0; i < operands.size(); output[i] += object[operands[i]], i++)
                     ;
         }
-        cout << "ANSWER = ( ";
+        ostringstream outputStream; 
+        outputStream << "ANSWER = ( ";
         for (int i=0; i<operands.size(); i++) 
         {
-            cout << output[i] << " "; 
+            outputStream << output[i] << " "; 
         }
-        cout << ")" << endl;
+        outputStream << ")\n";
+        //output_vector[this->queryID] = outputStream.str(); 
+        *outputString = outputStream.str(); 
         return make_unique<SuccessMsgResult>(qname);
     }
     catch (const TableNameNotFound &e)
@@ -250,7 +258,7 @@ string SumQuery::commandName()
 
 string SumQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string SumQuery::getTableNameSecond()
@@ -284,12 +292,15 @@ QueryResult::Ptr MaxQuery::execute()
         }
         if (!output.empty()) 
         {
-            cout << "ANSWER = ( ";
+            ostringstream outputStream; 
+            outputStream << "ANSWER = ( ";
             for (int i=0; i<operands.size(); i++) 
             {
-                cout << *max_element(output[operands[i]].begin(), output[operands[i]].end()) << " "; 
+                outputStream << *max_element(output[operands[i]].begin(), output[operands[i]].end()) << " "; 
             }
-            cout << ")" << endl;
+            outputStream << ")\n";
+            //output_vector[this->queryID] = outputStream.str(); 
+            *outputString = outputStream.str(); 
         }
         return make_unique<SuccessMsgResult>(qname);
     }
@@ -334,7 +345,7 @@ string MaxQuery::commandName()
 
 string MaxQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string MaxQuery::getTableNameSecond()
@@ -368,12 +379,15 @@ QueryResult::Ptr MinQuery::execute()
         }
         if(!output.empty()) 
         {
-            cout << "ANSWER = ( ";
+            ostringstream outputStream; 
+            outputStream << "ANSWER = ( ";
             for (int i=0; i<operands.size(); i++) 
             {
-                cout << *min_element(output[operands[i]].begin(), output[operands[i]].end()) << " "; 
+                outputStream << *min_element(output[operands[i]].begin(), output[operands[i]].end()) << " "; 
             }
-            cout << ")" << endl;
+            outputStream << ")\n";
+            //output_vector[this->queryID] = outputStream.str(); 
+            *outputString = outputStream.str(); 
         }
         return make_unique<SuccessMsgResult>(qname);
     }
@@ -413,12 +427,12 @@ QueryResult::Ptr MinQuery::execute()
 
 string MinQuery::commandName()
 {
-    return "MinQuery"; 
+    return "MIN"; 
 }
 
 string MinQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string MinQuery::getTableNameSecond()
@@ -453,6 +467,8 @@ QueryResult::Ptr SwapQuery::execute()
                 object[operands[1]] = temp;
             }
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter; 
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -496,7 +512,7 @@ string SwapQuery::commandName()
 
 string SwapQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string SwapQuery::getTableNameSecond()
@@ -526,7 +542,8 @@ QueryResult::Ptr CountQuery::execute()
             if (evalCondition(condition, object))
                 counter++;
         }
-        cout << "ANSWER = " << counter << endl;
+        //output_vector[this->queryID] = "ANSWER = ?\n"_f % counter;
+        *outputString = "ANSWER = ?\n"_f % counter;
         return make_unique<SuccessMsgResult>(qname);
     }
     catch (const TableNameNotFound &e)
@@ -570,7 +587,7 @@ string CountQuery::commandName()
 
 string CountQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string CountQuery::getTableNameSecond()
@@ -614,6 +631,8 @@ QueryResult::Ptr DuplicateQuery::execute()
             ++it;
             counter++;
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter;
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -657,7 +676,7 @@ string DuplicateQuery::commandName()
 
 string DuplicateQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string DuplicateQuery::getTableNameSecond()
@@ -692,13 +711,19 @@ QueryResult::Ptr SelectQuery::execute()
             }
         }
         map<string, vector<int>>::iterator it = output.begin();
-        while (it != output.end())
+        if (it!=output.end()) 
         {
-            cout << "( ? "_f % (*it).first;
-            for (int i = 0; i < (*it).second.size(); i++)
-                cout << (*it).second[i] << " ";
-            cout << ")" << endl;
-            ++it;
+            ostringstream outputStream; 
+            while (it != output.end())
+            {
+                outputStream << "( ? "_f % (*it).first;
+                for (int i = 0; i < (*it).second.size(); i++)
+                    outputStream << (*it).second[i] << " ";
+                outputStream << ")\n";
+                ++it;
+            }
+            //output_vector[this->queryID] = outputStream.str(); 
+            *outputString = outputStream.str(); 
         }
         return make_unique<SuccessMsgResult>(qname);
     }
@@ -743,7 +768,7 @@ string SelectQuery::commandName()
 
 string SelectQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string SelectQuery::getTableNameSecond()
@@ -779,6 +804,8 @@ QueryResult::Ptr DeleteQuery::execute()
             else
                 ++it_tb;
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter;
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -822,7 +849,7 @@ string DeleteQuery::commandName()
 
 string DeleteQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string DeleteQuery::getTableNameSecond()
@@ -904,7 +931,7 @@ string InsertQuery::commandName()
 
 string InsertQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string InsertQuery::getTableNameSecond()
@@ -939,6 +966,8 @@ QueryResult::Ptr UpdateQuery::execute()
                 counter++;
             }
         }
+        //output_vector[this->queryID] = "Affected ? rows.\n"_f % counter;
+        *outputString = "Affected ? rows.\n"_f % counter;
         return make_unique<RecordCountResult>(counter);
     }
     catch (const TableNameNotFound &e)
@@ -982,7 +1011,7 @@ string UpdateQuery::commandName()
 
 string UpdateQuery::getTableName()
 {
-    this->targetTable; 
+    return this->targetTable; 
 }
 
 string UpdateQuery::getTableNameSecond()
