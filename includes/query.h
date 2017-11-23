@@ -7,7 +7,8 @@
 #include <iostream>
 #include <mutex>
 #include <vector>
-#include <list> 
+#include <list>
+#include <condition_variable>
 #include "uexception.h"
 #include "db_table.h"
 #include "query_results.h"
@@ -46,8 +47,11 @@ extern list<string> output_list;
 
 //static mutex cout_lock; ////////
 static mutex thread_join_lock_lock; //////////
-extern mutex output_vector_lock; 
-
+// extern mutex output_vector_lock; 
+extern int counter;
+extern mutex counter_lock;
+extern std::condition_variable cv;
+extern mutex mtx;
 ////////////////////////////////////////////////////
 
 class Query {
@@ -81,8 +85,18 @@ public:
                 //cerr << commandName() << " " << queryID << " " << lockPtr << endl;  ///////////
                 //cout_lock.unlock();/////////////
                 lockPtr->lock(); 
-                if ((*it)->joinable())
-                    (*it)->join(); 
+                if ((*it)->joinable()) {
+                    (*it)->join();
+                    //cerr << "join!!!!!" << endl;
+                }else {
+                    /*
+                    counter_lock.lock();//////
+                    --counter;
+                    cerr << counter << "-----" << endl;
+                    counter_lock.unlock();/////
+                     */
+                    //(*it)->detach();
+                }
                 lockPtr->unlock(); 
             }
         }
@@ -91,8 +105,18 @@ public:
             {
                 mutex* lockPtr = thread_join_lock[*it];
                 lockPtr->lock(); 
-                if ((*it)->joinable())
-                    (*it)->join(); 
+                if ((*it)->joinable()) {
+                    (*it)->join();
+                    //cerr << "join!!!!!" << endl;
+                }else {
+                    /*
+                    counter_lock.lock();//////
+                    --counter;
+                    cerr << counter << "-----" << endl;
+                    counter_lock.unlock();/////
+                     */
+                    //(*it)->detach();
+                }
                 lockPtr->unlock(); 
             }
         }
@@ -104,6 +128,12 @@ public:
             cerr << "QUERY FAILED:\n\t" << result->toString();
         }
         //else{cout << result->toString();}
+        //cerr << "finished\n";
+        counter_lock.lock();//////
+        --counter;
+        //cerr << counter << "-----" << endl;
+        counter_lock.unlock();/////
+        cv.notify_all();
     }
     //////////////////////////////////////////////
 };

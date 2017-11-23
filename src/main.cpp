@@ -12,6 +12,10 @@
 
 using namespace std;
 
+int counter;
+mutex counter_lock;
+std::condition_variable cv;
+mutex mtx;
 // following global variables defined externally in "query.h"
 unordered_map<string, vector<vector<thread*>>> table_thread_group; 
 unordered_map<string, lastStatus> table_last_status; 
@@ -37,6 +41,7 @@ std::string extractQueryString()
 
 int main()
 {
+    counter = 0;
     QueryParser p;
     //p.registerQueryBuilder(std::make_unique<FakeQueryBuilder>());
     //p.registerQueryBuilder(std::make_unique<QueryBuilder(UpdateTable)>());
@@ -66,7 +71,16 @@ int main()
             //output_vector.push_back(string());
             output_list.push_back(string()); 
             query->outputString = &(*(--output_list.end()));
-            string tableName = query->getTableName(); 
+            string tableName = query->getTableName();
+
+            if(counter >= 100) {
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                //std::this_thread::yield();
+                std::unique_lock<std::mutex> lck(mtx);
+                cv.wait(lck);
+            }
+
+
             if (commandName == "COPYTABLE")
             {
                 string tableNameSecond = query->getTableNameSecond(); 
@@ -77,6 +91,10 @@ int main()
                 if (table_last_status[tableName] == STATUS_WRITE)
                 {
                     query->waitThreadsPtr = *(--table_thread_group[tableName].end());
+                    counter_lock.lock();//////
+                    ++counter;
+                    //cerr << counter << endl;
+                    counter_lock.unlock();/////
                     thread* currentThread = new thread(&Query::executeAndPrint, move(query));
                     thread_vector.push_back(currentThread); 
                     std::vector<thread*> currentThreadVector;
@@ -96,7 +114,11 @@ int main()
                 else 
                 {
                     query->waitThreadsPtr = *(--(--table_thread_group[tableName].end()));
-                    query->waitThreadsOutputPtr = *(--table_thread_group[tableName].end()); 
+                    query->waitThreadsOutputPtr = *(--table_thread_group[tableName].end());
+                    counter_lock.lock();//////
+                    ++counter;
+                    //cerr << counter << endl;
+                    counter_lock.unlock();/////
                     thread* currentThread = new thread(&Query::executeAndPrint, move(query));
                     thread_vector.push_back(currentThread); 
                     (--table_thread_group[tableName].end())->push_back(currentThread); 
@@ -112,12 +134,18 @@ int main()
                     table_last_status[tableNameSecond] = STATUS_WRITE; 
                 }
             }
-            else if (commandName == "LOAD" || commandName == "DROP" || commandName == "TRUNCATE" || commandName == "DELETE" || commandName == "INSERT" || commandName == "UPDATE" || commandName == "DUPLICATE" || commandName == "SWAP" || commandName=="ADD" || commandName=="SUB") 
+            else if (commandName == "LOAD" || commandName == "DROP" || commandName == "TRUNCATE"
+                  || commandName == "DELETE" || commandName == "INSERT" || commandName == "UPDATE" 
+                  || commandName == "DUPLICATE" || commandName == "SWAP" || commandName=="ADD" || commandName=="SUB") 
             {
                 if (!table_thread_group[tableName].empty()) 
                 {
                     query->waitThreadsPtr = *(--table_thread_group[tableName].end());
                 }
+                counter_lock.lock();//////
+                ++counter;
+                //cerr << counter << endl;
+                counter_lock.unlock();/////
                 thread* currentThread = new thread(&Query::executeAndPrint, move(query));
                 thread_vector.push_back(currentThread); 
                 std::vector<thread*> currentThreadVector;
@@ -135,6 +163,10 @@ int main()
                 if (table_last_status[tableName] == STATUS_WRITE)
                 {
                     query->waitThreadsPtr = *(--table_thread_group[tableName].end());
+                    counter_lock.lock();//////
+                    ++counter;
+                    //cerr << counter << endl;
+                    counter_lock.unlock();/////
                     thread* currentThread = new thread(&Query::executeAndPrint, move(query));
                     thread_vector.push_back(currentThread); 
                     std::vector<thread*> currentThreadVector;
@@ -150,7 +182,11 @@ int main()
                 else 
                 {
                     query->waitThreadsPtr = *(--(--table_thread_group[tableName].end()));
-                    query->waitThreadsOutputPtr = *(--table_thread_group[tableName].end()); 
+                    query->waitThreadsOutputPtr = *(--table_thread_group[tableName].end());
+                    counter_lock.lock();//////
+                    ++counter;
+                    //cerr << counter << endl;
+                    counter_lock.unlock();/////
                     thread* currentThread = new thread(&Query::executeAndPrint, move(query));
                     thread_vector.push_back(currentThread); 
                     (--table_thread_group[tableName].end())->push_back(currentThread); 
@@ -182,9 +218,11 @@ int main()
         mutex* lockPtr = thread_join_lock[*it];
         thread_join_lock_lock.unlock();/////////////
         lockPtr->lock(); 
-        if ((*it)->joinable())
-            (*it)->join(); 
-        lockPtr->unlock(); 
+        if ((*it)->joinable()) {
+            (*it)->join();
+            //cerr << "join!!!!!" << endl;
+        }
+        lockPtr->unlock();
         cout << *it_out; 
     }
     for (auto it=mutex_vector.begin(); it!=mutex_vector.end(); ++it)
