@@ -5,7 +5,7 @@
 #include "query_builders.h"
 #include "query.h"
 #include "db.h"
-
+#include <thread>
 #include <vector>
 #include <map>
 //#include <unistd.h> ///////////////////
@@ -39,6 +39,12 @@ std::string extractQueryString()
     } while (1);
 }
 
+int mult_thread_calc() {
+    int val = std::thread::hardware_concurrency();
+    if (val > 0) return val * 50;
+    else return 100;
+}
+
 int main()
 {
     counter = 0;
@@ -53,7 +59,7 @@ int main()
     //int queryIDCounter = 0; 
     while (cin)
     {
-        std::flush(cout);
+        //std::flush(cout);
         try
         {
             //cerr << queryIDCounter << endl; ///////////////
@@ -73,7 +79,7 @@ int main()
             query->outputString = &(*(--output_list.end()));
             string tableName = query->getTableName();
 
-            if(counter >= 100) {
+            if(counter >= mult_thread_calc()) {
                 //std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 //std::this_thread::yield();
                 std::unique_lock<std::mutex> lck(mtx);
