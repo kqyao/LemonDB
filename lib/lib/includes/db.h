@@ -7,12 +7,14 @@
 #include <unordered_map>
 #include <mutex>
 
-static std::mutex getInstanceLock; 
+
+static std::mutex getInstanceLock;
+//static std::mutex map_lock;
 
 class Database
 {
     static std::unique_ptr<Database> instance;
-
+    std::mutex map_lock;
     /* need some bugfix:
        read, no insert
      */
@@ -49,7 +51,7 @@ class Database
             if (Database::instance == nullptr) 
             {
                 instance = std::unique_ptr<Database>(new Database);
-                instance->tables.reserve(100); 
+                //instance->tables.reserve(100);
                 //instance = std::unique_ptr<Database>(); 
             }
             getInstanceLock.unlock(); 

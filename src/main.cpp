@@ -71,6 +71,7 @@ int main()
             string commandName = query->commandName();
             if (commandName == "QUIT") 
             {
+
                 break; 
             }
             //query->queryID = queryIDCounter; 
@@ -239,5 +240,8 @@ int main()
     {
         delete (*it); 
     }
+    //Database &db = Database::getInstance();
+    //db.printAllTable();
+    //cerr << "print end" << endl;
     return 0;
 }
