@@ -41,8 +41,8 @@ std::string extractQueryString()
 
 int mult_thread_calc() {
     int val = std::thread::hardware_concurrency();
-    if (val > 0) return val * 50;
-    else return 100;
+    if (val > 0) return val * 3;
+    else return 10;
 }
 
 int main()

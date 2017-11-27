@@ -63,12 +63,12 @@ class BasicQueryBuilder : public QueryBuilder
 
     Query::Ptr tryExtractQuery(TokenizedQueryString &query) override
     {
-        return nextBuilder->tryExtractQuery(query);
+        return (*nextBuilder).tryExtractQuery(query);
     }
 
     BasicQueryBuilder() : nextBuilder(FailedQueryBuilder::getDefault()){};
 
-    void clear() override { nextBuilder->clear(); }
+    void clear() override { (*nextBuilder).clear(); }
 
     ~BasicQueryBuilder() override = default;
 };

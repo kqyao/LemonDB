@@ -122,10 +122,10 @@ public:
         }
         //cerr << "h1: " << commandName() << endl; ////////////////
         QueryResult::Ptr result = execute();
-        if (!result->success())
+        if (!(*result).success())
         {
             std::flush(cout);
-            cerr << "QUERY FAILED:\n\t" << result->toString();
+            cerr << "QUERY FAILED:\n\t" << (*result).toString();
         }
         //else{cout << result->toString();}
         //cerr << "finished\n";
