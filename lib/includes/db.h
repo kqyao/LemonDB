@@ -5,14 +5,27 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <mutex>
+
+#define __MAP__LOCK__DEBUG__
+
+static std::mutex getInstanceLock;
+//static std::mutex map_lock;
 
 class Database
 {
     static std::unique_ptr<Database> instance;
-
+#ifdef __MAP__LOCK__DEBUG__
+    std::mutex map_lock;
+#endif
     std::unordered_map<std::string, std::unique_ptr<Table>> tables;
 
     Database() = default;
+    /*Database() 
+    {
+        tables = std::unordered_map<std::string, std::unique_ptr<Table>>();
+        tables.reserve(100); 
+    }*/
 
   public:
     void registerTable(Table::Ptr &&table);
@@ -34,7 +47,14 @@ class Database
     {
         if (Database::instance == nullptr)
         {
-            instance = std::unique_ptr<Database>(new Database);
+            getInstanceLock.lock(); 
+            if (Database::instance == nullptr) 
+            {
+                instance = std::unique_ptr<Database>(new Database);
+                //instance->tables.reserve(100);
+                //instance = std::unique_ptr<Database>(); 
+            }
+            getInstanceLock.unlock(); 
         }
         return *instance;
     }

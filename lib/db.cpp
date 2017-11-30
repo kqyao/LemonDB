@@ -7,19 +7,32 @@ std::unique_ptr<Database> Database::instance = nullptr;
 void Database::registerTable(Table::Ptr &&table)
 {
     auto name = table->name();
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.lock();
+#endif
     if (this->tables.find(name) != this->tables.end())
         throw DuplicatedTableName(
             "Error when inserting table \"" + name + "\". Name already exists.");
     this->tables[name] = std::move(table);
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.unlock();
+#endif
 }
 
 Table &Database::operator[](std::string tableName)
 {
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.lock();
+#endif
     auto it = this->tables.find(tableName);
     if (it == this->tables.end())
         throw TableNameNotFound(
             "Error accesing table \"" + tableName + "\". Table not found.");
-    return *(it->second);
+    auto& return_value = *(it->second);
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.unlock();
+#endif
+    return return_value;
 }
 
 const Table &Database::operator[](std::string tableName) const
@@ -28,24 +41,38 @@ const Table &Database::operator[](std::string tableName) const
     if (it == this->tables.end())
         throw TableNameNotFound(
             "Error accesing table \"" + tableName + "\". Table not found.");
-    return *(it->second);
+    auto& return_value = *(it->second);
+    return return_value;
 }
 
 void Database::dropTable(std::string name)
 {
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.lock();
+#endif
     auto it = this->tables.find(name);
     if (it == this->tables.end())
         throw TableNameNotFound(
             "Error when trying to drop table \"" + name + "\". Table not found.");
     this->tables.erase(it);
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.unlock();
+#endif
 }
 
 void Database::truncateTable(std::string name)
 {
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.lock();
+#endif
     auto it = this->tables.find(name);
     if (it == this->tables.end())
         throw TableNameNotFound(
             "Error when trying to truncate table \"" + name + "\". Table not found.");
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.unlock();
+#endif
+
     Database &db = Database::getInstance();
     auto &table = db[name];
     for (Table::Iterator it_tb = table.begin(); it_tb != table.end(); it_tb = table.begin())
@@ -54,10 +81,17 @@ void Database::truncateTable(std::string name)
 
 void Database::copyTable(std::string name, std::string newName)
 {
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.lock();
+#endif
     auto it = this->tables.find(name);
     if (it == this->tables.end())
         throw TableNameNotFound(
             "Error when trying to copy table \"" + name + "\". Table not found.");
+#ifdef __MAP__LOCK__DEBUG__
+    map_lock.unlock();
+#endif
+
     Database &db = Database::getInstance();
     auto &table = db[name];
     //std::vector<std::string> tmp_field(table.field());
