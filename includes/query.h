@@ -13,26 +13,37 @@
 #include "db_table.h"
 #include "query_results.h"
 
-using namespace std; 
+using namespace std;
 
 /************** things added*************/
 
 typedef enum lastStatus_t {
-    STATUS_WRITE = 0x00, 
+    STATUS_WRITE = 0x00,
     STATUS_READ = 0x01
-} lastStatus; 
+} lastStatus;
 
-extern unordered_map<string, vector<vector<thread*>>> table_thread_group; 
+extern unordered_map<string, vector<vector<thread*>>> table_thread_group;
 // map string(tablename) to thread groups; 
 // vector<thread*> is a group of reading threads or writing threads; 
 //                 we push `reading` threads into one vector
 //                 `writing` threads into different vectors
 // vector<vector<thread*>> is the whole list of these groups; 
 
-extern unordered_map<string, lastStatus> table_last_status; 
-// save the last status of each table. 
+extern unordered_map<string, lastStatus> table_last_status;
+// save the last status of each table.
 
-extern unordered_map<thread*, mutex*> thread_join_lock; 
+// this type is used on table column prev stage remember
+// it can be used for the parallel in a subset of write operation
+typedef enum last_col_status_t {
+    UNUSED = 0x00,
+    READ = 0x01,
+    WROTE = 0x02
+} last_col_status;
+
+// this global var is used to store all table col prev stage
+extern unordered_map<string, unordered_map<string, last_col_status>> tables_cols_last_status;
+
+extern unordered_map<thread*, mutex*> thread_join_lock;
 // the hash table of lock when test joinable. 
 
 extern std::vector<mutex*> mutex_vector;
@@ -42,7 +53,7 @@ extern std::vector<thread*> thread_vector;
 // contain all threads that need to be delete (free). 
 
 //extern std::vector<string> output_vector;
-extern list<string> output_list; 
+extern list<string> output_list;
 // contain all the output in order. 
 
 //static mutex cout_lock; ////////
@@ -71,12 +82,12 @@ public:
     virtual string commandName() = 0; // return things like "LOAD" or "SELECT", etc. 
     virtual string getTableName() = 0;  // return the table needed or affected. 
     virtual string getTableNameSecond() = 0; // only for COPYTABLE
-    void executeAndPrint() 
+    void executeAndPrint()
     {
-        string tableN = getTableName(); 
+        string tableN = getTableName();
         //cerr << "h0: " << commandName() << endl; ////////////////
         if (!waitThreadsPtr.empty()) {
-            for (auto it=waitThreadsPtr.begin(); it!=waitThreadsPtr.end(); ++it) 
+            for (auto it=waitThreadsPtr.begin(); it!=waitThreadsPtr.end(); ++it)
             {
                 thread_join_lock_lock.lock(); ////////////
                 mutex* lockPtr = thread_join_lock[*it];
@@ -84,7 +95,7 @@ public:
                 //cout_lock.lock();//////////
                 //cerr << commandName() << " " << queryID << " " << lockPtr << endl;  ///////////
                 //cout_lock.unlock();/////////////
-                lockPtr->lock(); 
+                lockPtr->lock();
                 if ((*it)->joinable()) {
                     (*it)->join();
                     //cerr << "join!!!!!" << endl;
@@ -97,14 +108,14 @@ public:
                      */
                     //(*it)->detach();
                 }
-                lockPtr->unlock(); 
+                lockPtr->unlock();
             }
         }
         if (!waitThreadsSecondPtr.empty()) {
-            for (auto it=waitThreadsSecondPtr.begin(); it!=waitThreadsSecondPtr.end(); ++it) 
+            for (auto it=waitThreadsSecondPtr.begin(); it!=waitThreadsSecondPtr.end(); ++it)
             {
                 mutex* lockPtr = thread_join_lock[*it];
-                lockPtr->lock(); 
+                lockPtr->lock();
                 if ((*it)->joinable()) {
                     (*it)->join();
                     //cerr << "join!!!!!" << endl;
@@ -117,7 +128,7 @@ public:
                      */
                     //(*it)->detach();
                 }
-                lockPtr->unlock(); 
+                lockPtr->unlock();
             }
         }
         //cerr << "h1: " << commandName() << endl; ////////////////
@@ -154,14 +165,14 @@ public:
         return "QUERY = NOOP";
     }
     string commandName() override {
-        return "NOOP"; 
+        return "NOOP";
     }
 
     string getTableName() override {
-        return ""; 
+        return "";
     }
     string getTableNameSecond() override {
-        return ""; 
+        return "";
     }
 };
 
