@@ -144,7 +144,7 @@ public:
         --counter;
         //cerr << counter << "-----" << endl;
         counter_lock.unlock();/////
-        cv.notify_all();
+        //cv.notify_all();
     }
     //////////////////////////////////////////////
 };

@@ -1,5 +1,6 @@
-# LemonDB
-Group project of designing a multi-thread database implementation
+# README
+
+> This is the new version of `lemondb`.
 
 ## Multi-threading Strategy
 

@@ -14,7 +14,7 @@ using namespace std;
 
 int counter;
 mutex counter_lock;
-std::condition_variable cv;
+//std::condition_variable cv;
 mutex mtx;
 // following global variables defined externally in "query.h"
 unordered_map<string, vector<vector<thread *>>> table_thread_group;
@@ -75,12 +75,13 @@ int main() {
             output_list.push_back(string());
             (*query).outputString = &(*(--output_list.end()));
             string tableName = (*query).getTableName();
-
-            if (counter >= mult_thread_num) {
-                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                //std::this_thread::yield();
-                std::unique_lock<std::mutex> lck(mtx);
-                cv.wait(lck);
+            while(1) {
+                if (counter >= mult_thread_num) {
+                    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    std::this_thread::yield();
+                    //std::unique_lock<std::mutex> lck(mtx);
+                    //cv.wait(lck);
+                } else break;
             }
 
 
